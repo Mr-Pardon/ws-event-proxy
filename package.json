@@ -23,7 +23,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Mr-Pardon/ws-event-proxy.git"
+    "url": "git+https://github.com/Mr-Pardon/ws-event-proxy.git"
   },
   "bugs": {
     "url": "https://github.com/Mr-Pardon/ws-event-proxy/issues"
