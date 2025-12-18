@@ -1,8 +1,8 @@
 ## ws-event-proxy
 
-一个**与具体协议无关的 WebSocket 事件代理层**，支持请求/响应映射、事件路由以及流式订阅场景。
-
 An **protocol-agnostic WebSocket event proxy** with request/response mapping, event routing and stream subscription support.
+
+一个**与具体协议无关的 WebSocket 事件代理层**，支持请求/响应映射、事件路由以及流式订阅场景。
 
 ---
 
