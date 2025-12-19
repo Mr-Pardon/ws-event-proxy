@@ -13,18 +13,17 @@ A lightweight, protocol-agnostic, event-driven message proxy for WebSocket, suit
 
 ## English
 
-`ws-event-proxy` is a lightweight, protocol-agnostic, event-driven WebSocket message proxy.
-By adopting a protocol adapter pattern, it allows you to handle different WebSocket message structures in a unified way, while providing request–response handling, event subscription, and streaming task processing.
+`ws-event-proxy` is a lightweight, protocol-agnostic, event-driven WebSocket message proxy. Through its protocol adapter pattern, it allows you to effortlessly handle various WebSocket message types and provides powerful mechanisms for request-response, event subscription, and streaming task processing.
 
 ### ✨ Core Features
 
-- **Protocol-agnostic**: Supports different application-level message structures via custom `protocol` adapters.
-- **Flexible sending modes**: The `send` method supports fire-and-forget or request–response modes based on protocol configuration.
-- **Event subscription**: Easily subscribe to and handle server-pushed events using `subscribeEvent`.
-- **Streaming tasks**: Use `subscribeTask` to send task requests and subscribe to server-side event streams.
-- **Lifecycle control**: Supports custom ready events, ensuring messages are sent only after both the WebSocket and server are ready.
-- **Isomorphic usage**: Works seamlessly in both browser and Node.js environments.
-- **Lightweight**: Minimal core implementation with zero external dependencies.
+-   **Protocol Agnostic**: Supports different application-layer message structures through a custom `protocol` adapter.
+-   **Flexible Sending Modes**: The `send` method supports either Fire-and-Forget or Request-Response modes based on protocol configuration.
+-   **Event Subscription**: Easily subscribe to and handle pushed events based on their content using the `subscribeEvent` method.
+-   **Stream Subscription**: Use `subscribeTask` to send a streaming task request and subscribe to the event stream returned by the server.
+-   **Lifecycle Hooks**: Supports a **custom ready event**, ensuring that the proxy waits for both the WebSocket connection and the server to be ready before sending messages.
+-   **Isomorphic**: Works seamlessly in both browser and Node.js environments.
+-   **Lightweight**: Lean core with zero external dependencies.
 
 ### 📦 Installation
 
@@ -34,116 +33,136 @@ npm install ws-event-proxy
 
 ### 🚀 Usage
 
-#### 1. Protocol Configuration & Instantiation
+#### 1. Protocol Configuration and Instantiation
 
-The core idea of `ws-event-proxy` is to customize message behavior via a `protocol` adapter.
+The core design of `ws-event-proxy` is its ability to adapt.
 
-By defining a protocol, you can switch the message sending behavior to a Promise-based request–response model, enabling automatic request/response matching and timeout handling.
+By providing a custom `protocol` adapter, you can switch the message sending mode to a `Promise`-based **Request-Response** model, which is ideal for automatically matching requests with responses and handling timeouts.
 
-Without any protocol configuration, `ws-event-proxy` defaults to Fire-and-Forget mode.
+Without a custom protocol, `ws-event-proxy` defaults to a **Fire-and-Forget** mode.
 
-When instantiating `ws-event-proxy`, you may provide a custom protocol adapter.
-If omitted, BaseProtocol is used by default.
+You can provide a custom protocol adapter when instantiating `ws-event-proxy`. It defaults to the [`BaseProtocol`](#protocol-adapter-layer).
 
-```js
-import { proxy as WebSocketProxy } from 'ws-event-proxy'
+```javascript
+import { proxy as WebSocketProxy } from 'ws-event-proxy';
 
 const myProtocol = {
+  // Message constructor
   buildRequest(payload, ctx) {
     return {
       ...payload,
+      // You can use the built-in callback index or define your own
       requestId: ctx.getCBIndex()
     }
   },
-
+  // Tells the proxy how to extract a unique ID from an outgoing message
   getRequestId(request) {
-    return request.requestId
+    return request.requestId;
   },
-
+  // Tells the proxy how to extract a unique ID from an incoming message
   getResponseId(response) {
-    return response.requestId
+    return response.requestId;
   }
 }
 
-const proxy = new WebSocketProxy(myProtocol)
+const proxy = new WebSocketProxy(myProtocol);
 ```
 
-After instantiation, bind the WebSocket instance once the connection is established.
+After instantiation, simply call the `bind` method with your WebSocket instance once the connection is open.
 
-```js
-const ws = new WebSocket('ws://your-websocket-endpoint')
+```javascript
+const ws = new WebSocket('ws://your-websocket-endpoint');
 ws.on('open', () => {
-  proxy.bind(ws)
-})
+  proxy.bind(ws);
+  console.log('WebSocket connected and proxy bound.');
+});
 ```
 
 #### 2. Sending Messages
 
-The `send` method supports Fire-and-Forget and Request–Response modes.
+The `send` method offers two modes: **Fire-and-Forget** and **Request-Response**.
 
-When both `getRequestId` and `getResponseId` are provided, `send` defaults to request–response mode and returns a Promise.
+When the protocol is configured with `getRequestId` and `getResponseId`, `send` defaults to the **Request-Response** mode, returning a `Promise` that waits for a response. **A timeout can also be configured**.
 
-```js
-const response = await proxy.send({
-  action: 'getUser',
-  userId: 123
-})
-```
-
-To explicitly enable Fire-and-Forget mode:
-
-```js
-proxy.send(
-  { action: 'sendMessage', data: {} },
-  { expectResponse: false }
-)
-```
-
-#### 3. Event Subscription
-
-```js
-const unsubscribe = proxy.subscribeEvent(
-  {
-    type: 'notification',
-    status: value => value !== 0
-  },
-  event => {
-    console.log(event)
+```javascript
+// 2. Send a request-response message
+async function getUserInfo() {
+  try {
+    // You can add a requestId field by configuring the buildRequest method
+    const response = await proxy.send({ action: 'getUser', userId: 123 });
+    console.log('Received user info:', response);
+  } catch (error) {
+    console.error(error.message); // e.g., 'request timeout'
   }
-)
-
-unsubscribe()
+}
 ```
 
-#### 4. Streaming Task Subscription
+You can also explicitly enable the **Fire-and-Forget** mode by setting `expectResponse: false`.
 
-```js
+```javascript
+proxy.send({ 
+  action: 'sendMessage',
+  data: {}
+}, { expectResponse: false });
+```
+
+#### 3. Subscribing to Events
+
+**Supports matching multiple rules**. The `value` for a `rule` can be a **literal value or a function** `(value, event) => boolean`.
+
+```javascript
+// Subscribe to all 'notification' type events where status is not 0
+const unsubscribe = proxy.subscribeEvent(
+  { 
+    type: 'notification',
+    status: value => value != 0
+  },
+  (event) => {
+    console.log('Status Error:', event);
+  }
+);
+
+// Unsubscribe
+unsubscribe();
+```
+
+#### 4. Subscribing to Task Streams
+
+The `subscribeTask` method is used to send a task request and subscribe to the task stream pushed by the server. **It also supports matching multiple rules**, where the `value` can be a **literal or a function** `(value, event) => boolean`.
+
+```javascript
 const unsubscribe = proxy.subscribeTask({
-  request: { action: 'getStatusRealTime' },
+  request: {
+    action: 'getStatusRealTime'
+  },
   rule: {
     type: 'status',
-    status: value => value !== 0
+    status: value => value != 0
   },
-  handler: event => {
-    console.log(event)
+  handler: (event) => {
+    console.log('Status Error:', event);
   }
 })
 
-unsubscribe()
+unsubscribe();
 ```
 
 #### 5. Ready Lifecycle
 
+In some scenarios, you might need to **wait for the server to confirm the connection is ready** before sending any messages. By setting `needReady: true` and defining `isReadyEvent`, you can make `ws-event-proxy` wait for a ready signal from the server before dispatching any messages.
+
+This means that `send` essentially registers a sending task with the `proxy`, which will only start sending when the WebSocket is connected and the `isReadyEvent` condition is met. Therefore, you can safely call `send` even before `new WebSocket(url)`.
+
 ```js
 const ReadyProtocol = {
   needReady: true,
+  
   isReadyEvent(event) {
     return event.type === 'ready'
   }
 }
 
 const wsProxy = new proxy(ReadyProtocol)
-
 wsProxy.send({ action: 'start' })
 
 const ws = new WebSocket(url)
@@ -157,22 +176,40 @@ ws.on('open', () => {
 ```js
 const BaseProtocol = {
   needReady: false,
-
+  /**
+   * @type {Array}
+   * @property {Object} route
+   * @property {Object} route.rule
+   * @property {Function} route.handler
+   */
   systemRoutes: Object.freeze([]),
-
+  /**
+   * @param {Object} payload 
+   * @param {Object} ctx 
+   * @returns {Object}
+   */
   buildRequest(payload, ctx) {
     return payload
   },
-
-  getRequestId() {
+  /**
+   * @param {Object} request
+   * @returns {String | Number | null}
+   */
+  getRequestId(request) {
     return null
   },
-
-  getResponseId() {
+  /**
+   * @param {Object} response
+   * @returns {String | Number | null}
+   */
+  getResponseId(response) {
     return null
   },
-
-  isReadyEvent() {
+  /**
+   * @param {Object} event
+   * @returns {Boolean}
+   */
+  isReadyEvent(event) {
     return false
   }
 }
@@ -180,31 +217,39 @@ const BaseProtocol = {
 
 ### 📖 API Reference
 
-#### new proxy(protocol?)
+#### `new proxy(protocol?)`
 
-- protocol (optional): Object implementing BaseProtocol.
-  To enable request–response behavior, both getRequestId and getResponseId must be implemented.
+-   `protocol` (Optional): An object that implements the `BaseProtocol` interface. **To use the `Promise`-based request-response feature of `send`, you must provide a protocol that implements `getRequestId` and `getResponseId`.**
 
-#### proxy.bind(ws)
+#### `proxy.bind(ws)`
 
-- ws: A standard WebSocket instance.
+-   `ws`: A standard WebSocket instance.
 
-#### async proxy.send(payload, options?)
+#### `async proxy.send(payload, options?)`
 
-- payload: Data to send.
-- options:
-  - timeout: Response timeout in ms (default 10000)
-  - expectResponse: true for request–response, false for fire-and-forget
+Sends a message. This method supports two modes: **Request-Response** and **Fire-and-Forget**.
 
-Returns Promise or undefined.
+-   `payload`: The data object to be sent.
+-   `options` (Optional):
+    -   `timeout`: (Number) In Request-Response mode, the timeout in milliseconds to wait for a response. Default is `10000`.
+    -   `expectResponse`: (Boolean) Determines the operation mode.
+        -   `true` (default): Enables **Request-Response** mode.
+        -   `false`: Enables **Fire-and-Forget** mode.
+-   **Returns**: `Promise<Object>` | `undefined`
 
-#### proxy.subscribeEvent(rule, handler)
+#### `proxy.subscribeEvent(rule, handler)`
 
-Returns an unsubscribe function.
+-   `rule`: An object used for matching events.
+-   `handler`: `(event) => void`, the callback triggered when an event matches.
+-   **Returns**: `Function`, which can be called to unsubscribe.
 
-#### proxy.subscribeTask(options)
+#### `proxy.subscribeTask(options)`
 
-Returns an unsubscribe function.
+-   `options`:
+    -   `request`: (Object) The task request object.
+    -   `rule`: (Object) The rule used for matching task stream events.
+    -   `handler`: `(event) => void`, the callback triggered when an event matches.
+-   **Returns**: `Function`, which can be called to unsubscribe.
 
 ### 📄 License
 
