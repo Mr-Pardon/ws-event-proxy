@@ -1,6 +1,6 @@
 {
   "name": "ws-event-proxy",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A protocol-agnostic WebSocket event proxy that provides request/response mapping, event routing, and stream subscription capabilities.",
   "type": "module",
   "main": "./src/index.js",
