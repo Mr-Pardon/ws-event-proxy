@@ -83,6 +83,11 @@ export declare class proxy<E = any, Req = any, Res = any> {
   bind(ws: WebSocketLike): void
 
   /**
+   * Handle an incoming message.
+   */
+  onMessage(message: any): void
+
+  /**
    * Send a one-shot request.
    */
   send(payload: Req, options?: SendOptions): Promise<Res | any | undefined> | undefined
