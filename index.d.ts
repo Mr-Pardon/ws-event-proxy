@@ -63,7 +63,7 @@ export interface SubscribeTaskOptions<E = any, Req = any> {
 
 export declare const BaseProtocol: Protocol
 
-export declare class proxy<E = any, Req = any, Res = any> {
+export declare class WSProxyInstance<E = any, Req = any, Res = any> {
   constructor(protocol?: Protocol<E, Req, Res>)
 
   /**
@@ -95,7 +95,7 @@ export declare class proxy<E = any, Req = any, Res = any> {
   /**
    * Subscribe events by rule.
    */
-  subscribeEvent(rule: RouteRule<E>, handler: (event: E) => void): () => boolean
+  subscribeEvent(rule: RouteRule<E>, handler: (event: E, proxy: WSProxyInstance<E, Req, Res>) => void): () => boolean
 
   /**
    * Send a request and subscribe to a stream of events.

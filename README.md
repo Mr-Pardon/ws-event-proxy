@@ -364,7 +364,7 @@ const unsubscribe = proxy.subscribeEvent(
     type: 'notification',
     status: value => value != 0
   },
-  (event) => {
+  (event, wsProxy) => {
     console.log('Status Error:', event);
   }
 );
@@ -386,7 +386,7 @@ const unsubscribe = proxy.subscribeTask({
     type: 'status',
     status: value => value != 0
   },
-  handler: (event) => {
+  handler: (event, wsProxy) => {
     console.log('Status Error:', event);
   }
 })
@@ -424,6 +424,9 @@ ws.on('open', () => {
 ```js
 const BaseProtocol = {
   needReady: false,
+
+  logSend: false,
+  logReceive: false,
 
   /**
    * @type {Array}
@@ -494,7 +497,7 @@ const BaseProtocol = {
 #### `proxy.subscribeEvent(rule, handler)`
 
 - `rule`: 一个用于匹配事件的对象。
-- `handler`: `(event) => void`，当事件匹配时触发的回调。
+- `handler`: `(event, wsProxy) => void`，当事件匹配时触发的回调。
 - **返回**: `Function`，调用此函数可取消订阅。
 
 #### `proxy.subscribeTask(options)`
@@ -502,7 +505,7 @@ const BaseProtocol = {
 - `options`:
   - `request`: (Object) 任务请求对象。
   - `rule`: (Object) 用于匹配任务流事件的对象。
-  - `handler`: `(event) => void`，当事件匹配时触发的回调。
+  - `handler`: `(event, wsProxy) => void`，当事件匹配时触发的回调。
 - **返回**: `Function`，调用此函数可取消订阅。
 
 ### 📄 许可证

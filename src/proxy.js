@@ -1,6 +1,6 @@
 import { BaseProtocol } from './protocol.js'
 
-export class proxy {
+export class WSProxy {
 
   /**
    * webSocket 消息代理
@@ -155,6 +155,8 @@ export class proxy {
 
   onMessage(msg) {
     const event = this.parseMessage(msg)
+    this.__protocol.logReceive
+      && console.log('[proxy] onMessage:', event)
     if (!event) return
 
     if (this.__protocol.needReady && this.__protocol.isReadyEvent(event)) {
@@ -187,7 +189,7 @@ export class proxy {
 
     routes.forEach(route => {
       if (route.match(event)) {
-        route.handler(event)
+        route.handler(event, this)
       }
     })
   }
@@ -293,6 +295,7 @@ export class proxy {
       return
     }
 
+    this.__protocol.logSend && console.log('[proxy] sendMessage:', message)
     this.__ws.send(message)
   }
 

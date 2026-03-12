@@ -8,6 +8,12 @@ export const BaseProtocol = {
   needReady: false,
 
   /**
+   * 是否打印发送/接收消息
+   */
+  logSend: false,
+  logReceive: false,
+
+  /**
    * 系统路由
    * @type {Array}
    * @property {Object} route 路由对象
