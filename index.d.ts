@@ -14,6 +14,16 @@ export interface Protocol<E = any, Req = any, Res = any> {
   needReady?: boolean
 
   /**
+   * Whether to log sending.
+   */
+  logSend?: boolean
+
+  /**
+   * Whether to log receiving.
+   */
+  logReceive?: boolean
+
+  /**
    * Built-in system routes. They are registered with higher priority.
    */
   systemRoutes?: ReadonlyArray<SystemRoute<E>>
