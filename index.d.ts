@@ -50,10 +50,11 @@ export interface Protocol<E = any, Req = any, Res = any> {
 }
 
 export interface WebSocketLike {
-  send(data: string): void
+  send(data: string | ArrayBufferLike | Blob | ArrayBufferView): void
   addEventListener?(
     type: 'message',
-    listener: (event: { data: any }) => void
+    listener: (event: MessageEvent<any> | { data: any }) => void,
+    options?: any
   ): void
   on?(event: 'message', listener: (data: any) => void): void
 }
@@ -100,7 +101,7 @@ export declare class WSProxy<E = any, Req = any, Res = any> {
   /**
    * Send a one-shot request.
    */
-  send(payload: Req, options?: SendOptions): Promise<Res | any | undefined> | undefined
+  send(payload: Req, options?: SendOptions): Promise<Res | undefined>
 
   /**
    * Subscribe events by rule.
